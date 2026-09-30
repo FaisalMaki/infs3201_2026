@@ -137,6 +137,11 @@ export async function changeOrderStatus(order, requestedStatus) {
     return true
 }
 
+
+/**
+ * calculates the total price for a customer so he or she can 
+ * know what is the total amount and pay it
+ */
 export async function calculateTheSubtotal(OrderAsArray) {
     let price_total = 0
     
