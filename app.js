@@ -46,8 +46,9 @@ async function displayCustomerOrders() {
     const customerOrders = await Logic.fetchOrdersForCustomer(customerCode)
 
     console.log('Order ID  Order Date  Status      Total')
-    console.log('--------  ----------  ----------- -----')
 
+    console.log('--------  ----------  ----------- -----')
+    
     for (const currentOrder of customerOrders) {
 
         const orderCode = currentOrder.order.padEnd(8)
@@ -59,8 +60,12 @@ async function displayCustomerOrders() {
             `${orderCode}  ${orderDate}  ${orderStatus} ${orderTotal}`
         )
     }
+    let total_price = await Logic.calculateTheSubtotal(customerOrders)
+    console.log('your total is ' + total_price)
+    console.log('-------------------------')
+    
+    console.log(' ')
 
-    console.log('')
 }
 
 
@@ -69,6 +74,7 @@ async function displayCustomerOrders() {
 export async function placeOrder() {
 
     const customerCode = input('Enter customer ID: ').trim().toUpperCase()
+
     const customerInfo = await Logic.findCustomer(customerCode)
 
     if (!customerInfo) {

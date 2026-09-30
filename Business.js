@@ -136,3 +136,26 @@ export async function changeOrderStatus(order, requestedStatus) {
 
     return true
 }
+
+export async function calculateTheSubtotal(OrderAsArray) {
+    let price_total = 0
+    
+
+    for(let totalOfOrder of OrderAsArray){
+        price_total += totalOfOrder.total
+    }
+
+    let holder = price_total
+
+    if(price_total < 25){
+        let deffrence = 25 - price_total
+        holder += deffrence 
+    }
+    
+    if(price_total < 50){
+        holder += 10
+    }
+
+    price_total = holder
+    return price_total
+}
