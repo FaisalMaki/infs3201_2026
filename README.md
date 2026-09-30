@@ -1,1 +1,2 @@
-# Assignment2_FaisalMaki_60104892
+# Assignment 1
+The solution provided for assignment 1 is somewhat sketchy!  This was done on purpose so that there will be a bit more work to be done for the students who use this as a starting point for Assignment 2
