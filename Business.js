@@ -1,5 +1,5 @@
 import * as Storage from './Persistence.js'
-
+import 'dotenv/config'
 
 // Gets the services from the Persistence layer.
 // Business doesn't care where they came from.
@@ -88,7 +88,7 @@ export async function generateOrderId() {
     const numberFromStorage = await Storage.findNextOrderNumber()
 
     const formattedNumber =
-        '0' + String(numberFromStorage).padStart(3, '0')
+        'O' + String(numberFromStorage).padStart(3, '0')
 
     return formattedNumber
 }
@@ -143,24 +143,72 @@ export async function changeOrderStatus(order, requestedStatus) {
  * know what is the total amount and pay it
  */
 export async function calculateTheSubtotal(OrderAsArray) {
-    let price_total = 0
-    
+    const minCharge = Number(process.env.MINIMUM_ORDER_CHARGE || 25)
+    const freeDeliveryLimit = Number(process.env.FREE_DELIVERY_THRESHOLD || 50)
+    const baseDeliveryFee = Number(process.env.DELIVERY_CHARGE || 10)
 
-    for(let totalOfOrder of OrderAsArray){
-        price_total += totalOfOrder.total
+    let rawSubtotal = 0
+
+    for (let singleOrder of OrderAsArray) {
+        rawSubtotal += singleOrder.total
     }
 
-    let holder = price_total
+    let adjustedSubtotal = rawSubtotal < minCharge ? minCharge : rawSubtotal
+    let deliveryFee = rawSubtotal < freeDeliveryLimit ? baseDeliveryFee : 0
 
-    if(price_total < 25){
-        let deffrence = 25 - price_total
-        holder += deffrence 
-    }
-    
-    if(price_total < 50){
-        holder += 10
+    return adjustedSubtotal + deliveryFee
+}
+
+
+/**
+ * computes the total by multiplying price with quantity
+ * @param {*} unitPrice 
+ * @param {*} quantity 
+ * @returns 
+ */
+export function computeItemLineTotal(unitPrice, quantity) {
+    return unitPrice * quantity
+}
+
+/**
+ * gets also the total but with conditions applied and with
+ * better handling some complex paramaters 
+ * @param {*} order 
+ * @returns 
+ */
+export async function computeOrderBreakdown(order) {
+    const minCharge = Number(process.env.MINIMUM_ORDER_CHARGE || 0)
+    const freeDeliveryLimit = Number(process.env.FREE_DELIVERY_THRESHOLD || 0)
+    const baseDeliveryFee = Number(process.env.DELIVERY_CHARGE || 0)
+
+    let subtotalPrice = 0
+
+    for (const item of order.items) {
+        const itemPrice = await getServiceCost(item.serviceId)
+        if (itemPrice === null) return null
+        
+        subtotalPrice += itemPrice * item.quantity
     }
 
-    price_total = holder
-    return price_total
+    let minOrderAdjustment = 0
+    let adjustedServiceFee = subtotalPrice
+    let deliveryFee = 0
+
+    if (subtotalPrice < minCharge) {
+        minOrderAdjustment = minCharge - subtotalPrice
+        adjustedServiceFee = minCharge
+    }
+
+    if (subtotalPrice < freeDeliveryLimit) {
+        deliveryFee = baseDeliveryFee
+    }
+
+    const grandTotal = adjustedServiceFee + deliveryFee
+
+    return {
+        subtotalPrice,
+        minOrderAdjustment,
+        deliveryFee,
+        grandTotal
+    }
 }

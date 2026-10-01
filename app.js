@@ -1,7 +1,9 @@
+import 'dotenv/config' 
 import promptSync from 'prompt-sync'
 import * as Logic from './Business.js'
 
 const input = promptSync()
+
 
 
 // Shows the laundry services available.
@@ -70,7 +72,6 @@ async function displayCustomerOrders() {
 
 
 // Creates a new laundry order.
-// The user picks services until they decide they have suffered enough.
 export async function placeOrder() {
 
     const customerCode = input('Enter customer ID: ').trim().toUpperCase()
@@ -83,7 +84,6 @@ export async function placeOrder() {
     }
 
     const selectedItems = []
-    let orderTotal = 0
 
     while (true) {
 
@@ -108,8 +108,6 @@ export async function placeOrder() {
             serviceId: serviceCode,
             quantity: amount
         })
-
-        orderTotal += chosenService.price * amount
     }
 
     if (selectedItems.length === 0) {
@@ -128,10 +126,13 @@ export async function placeOrder() {
         items: selectedItems
     }
 
+    // CALCULATE FINAL TOTAL USING BUSINESS LOGIC
+    const pricing = await Logic.computeOrderBreakdown(laundryOrder)
+
     await Logic.storeOrder(laundryOrder)
 
     console.log(`Order ${newOrderCode} created`)
-    console.log(`Total price: ${orderTotal.toFixed(2)} QAR`)
+    console.log(`Total price: ${pricing.grandTotal.toFixed(2)} QAR`)
 }
 
 
@@ -168,23 +169,75 @@ async function changeStatus() {
     }
 }
 
+/**
+ * Displays a invoice receipt for a specific order
+ */
+async function displayInvoiceReceipt() {
+    const orderCode = input('Enter order ID: ').trim().toUpperCase()
+    const orderDetails = await Logic.findOrder(orderCode)
 
-// Displays the menu and keeps asking until a valid choice is entered.
+    if (!orderDetails) {
+        console.log('**** order not found')
+        return
+    }
+
+    const customerInfo = await Logic.findCustomer(orderDetails.customerId)
+    if (!customerInfo) {
+        console.log('**** customer not found')
+        return
+    }
+
+    console.log(`Order: ${orderDetails.orderId}      Date: ${orderDetails.orderDate}      Status: ${orderDetails.status}`)
+    console.log(`Customer: ${customerInfo.name}\n`)
+
+    console.log('Service'.padEnd(25) + 'Qty'.padEnd(8) + 'Unit Price'.padEnd(12) + 'Line Total')
+    console.log('-------'.padEnd(25) + '---'.padEnd(8) + '----------'.padEnd(12) + '----------')
+
+    for (const item of orderDetails.items) {
+        const service = await Logic.findService(item.serviceId)
+        if (!service) {
+            console.log(`**** service ${item.serviceId} not found`)
+            return
+        }
+
+        const lineTotal = Logic.computeItemLineTotal(service.price, item.quantity)
+
+        console.log(
+            service.name.padEnd(25) +
+            String(item.quantity).padEnd(8) +
+            service.price.toFixed(2).padEnd(12) +
+            lineTotal.toFixed(2)
+        )
+    }
+
+    const pricingBreakdown = await Logic.computeOrderBreakdown(orderDetails)
+
+    if (!pricingBreakdown) {
+        console.log('**** unable to calculate invoice')
+        return
+    }
+
+    console.log('')
+    console.log(`Service subtotal: ${pricingBreakdown.subtotalPrice.toFixed(2)} QAR`)
+    console.log(`Minimum-order adjustment: ${pricingBreakdown.minOrderAdjustment.toFixed(2)} QAR`)
+    console.log(`Delivery charge: ${pricingBreakdown.deliveryFee.toFixed(2)} QAR`)
+    console.log(`Final total: ${pricingBreakdown.grandTotal.toFixed(2)} QAR\n`)
+}
+
+// menu that shows the options
 function menu() {
-
     let choice
-
     while (true) {
-
         console.log('1. Show laundry services')
         console.log('2. View customer orders')
         console.log('3. Update order status')
         console.log('4. Create new order')
-        console.log('5. Exit\n')
+        console.log('5. View invoice') 
+        console.log('6. Exit\n')       
 
         choice = Number(input('What is your choice> '))
 
-        if (choice >= 1 && choice <= 5) {
+        if (choice >= 1 && choice <= 6) {
             return choice
         }
 
@@ -193,34 +246,28 @@ function menu() {
 }
 
 
-// Main part of the presentation layer.
-// It doesn't calculate prices or read JSON files.
-// It just asks the Business layer to do the actual work.
 let programRunning = true
 
 while (programRunning) {
-
     const selectedOption = menu()
 
     switch (selectedOption) {
-
         case 1:
             await displayServices()
             break
-
         case 2:
             await displayCustomerOrders()
             break
-
         case 3:
             await changeStatus()
             break
-
         case 4:
             await placeOrder()
             break
-
         case 5:
+            await displayInvoiceReceipt()
+            break
+        case 6:
             programRunning = false
             break
     }

@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/robert-ford-udst/infs3201-fall2026#readme",
   "dependencies": {
+    "dotenv": "^18.0.5",
     "prompt-sync": "^4.2.0"
   }
 }

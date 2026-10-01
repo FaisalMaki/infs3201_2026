@@ -182,5 +182,57 @@
                 "quantity": 5
             }
         ]
+    },
+    {
+        "orderId": "0013",
+        "customerId": "C002",
+        "orderDate": "2026-10-01",
+        "status": "Received",
+        "items": [
+            {
+                "serviceId": "S001",
+                "quantity": 4
+            },
+            {
+                "serviceId": "S002",
+                "quantity": 9
+            }
+        ]
+    },
+    {
+        "orderId": "O014",
+        "customerId": "C001",
+        "orderDate": "2026-10-01",
+        "status": "Received",
+        "items": [
+            {
+                "serviceId": "S001",
+                "quantity": 1
+            }
+        ]
+    },
+    {
+        "orderId": "O015",
+        "customerId": "C001",
+        "orderDate": "2026-10-01",
+        "status": "Received",
+        "items": [
+            {
+                "serviceId": "S002",
+                "quantity": 1
+            }
+        ]
+    },
+    {
+        "orderId": "O016",
+        "customerId": "C001",
+        "orderDate": "2026-10-01",
+        "status": "Received",
+        "items": [
+            {
+                "serviceId": "S001",
+                "quantity": 1
+            }
+        ]
     }
 ]
